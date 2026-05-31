@@ -54,23 +54,53 @@
 
 <script>
     let startTime, timerInterval, count = 0;
-    const cats = ["🐈", "cat", "😻", "😼", "😽", "😾", "🐆", "🐅", "🐈‍⬛"];
+    const cats = ["🐈", "😻", "😼", "😽", "😾", "🐆", "🐅", "🐈‍⬛", "🦁", "🙀", "🐾", "🧶"];
+
+    // This creates the pool of questions that will shrink as you play
+    let remainingQuestions = [];
 
     function nextQuestion() {
-        const idx = Math.floor(Math.random() * questions.length);
-        document.getElementById("questionText").innerHTML = "\\[ " + questions[idx].q + " \\]";
-        document.getElementById("answerText").innerHTML = "\\[ " + questions[idx].a + " \\]";
-        document.getElementById("category").textContent = questions[idx].cat;
+        // 1. Check if we need to (re)fill the pool
+        if (remainingQuestions.length === 0) {
+            // We use [...questions] to copy the list from your questions.js file
+            remainingQuestions = [...questions];
+            if (count > 0) {
+                alert("🎉 You've cleared all questions! Restarting the set.");
+            }
+        }
+
+        // 2. Pick a random index from the pool
+        const randomIndex = Math.floor(Math.random() * remainingQuestions.length);
+        const currentQ = remainingQuestions[randomIndex];
+
+        // 3. Remove the chosen question from the pool so it doesn't repeat
+        remainingQuestions.splice(randomIndex, 1);
+
+        // 4. Update the UI with the math
+        document.getElementById("questionText").innerHTML = "\\[ " + currentQ.q + " \\]";
+        document.getElementById("answerText").innerHTML = "\\[ " + currentQ.a + " \\]";
+        
+        // Show category and how many are left in the set
+        document.getElementById("category").textContent = currentQ.cat + " (Left: " + remainingQuestions.length + ")";
+        
+        // Cycle the cat icon
         document.getElementById("catEmoji").textContent = cats[count % cats.length];
         
+        // Reset answer view and enable the reveal button
         document.getElementById("answerText").style.display = "none";
         document.getElementById("revealBtn").disabled = false;
         
-        MathJax.typesetPromise();
+        // Re-render the LaTeX math
+        if (window.MathJax) {
+            MathJax.typesetPromise();
+        }
+
+        // 5. Reset and Start Timer
         clearInterval(timerInterval);
         startTime = Date.now();
         timerInterval = setInterval(() => {
-            document.getElementById("display").textContent = ((Date.now() - startTime) / 1000).toFixed(2);
+            const elapsedTime = (Date.now() - startTime) / 1000;
+            document.getElementById("display").textContent = elapsedTime.toFixed(2);
         }, 10);
     }
 
@@ -78,11 +108,15 @@
         clearInterval(timerInterval);
         document.getElementById("answerText").style.display = "block";
         document.getElementById("revealBtn").disabled = true;
+        
+        // Increment the total solved counter
         count++;
         document.getElementById("score").textContent = "Solved: " + count;
-        MathJax.typesetPromise();
+        
+        if (window.MathJax) {
+            MathJax.typesetPromise();
+        }
     }
-
 </script>
 </body>
 </html>

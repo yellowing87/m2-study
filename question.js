@@ -1,0 +1,22 @@
+const questions = [
+    { q: "y = \\sin^2(x^3)", a: "y' = 6x^2 \\sin(x^3) \\cos(x^3)", cat: "Chain Rule" },
+    { q: "y = e^{4x} \\cos(x)", a: "y' = e^{4x}(4\\cos x - \\sin x)", cat: "Product Rule" },
+    { q: "y = \\sqrt{1 + \\tan x}", a: "y' = \\frac{\\sec^2 x}{2\\sqrt{1 + \\tan x}}", cat: "Surd Shortcut" },
+    { q: "y = \\ln(\\sin^2 x)", a: "y' = 2 \\cot x", cat: "Log Shortcut" },
+    { q: "x^2 + y^2 = 2xy", a: "y' = 1 \\text{ (Hint: it's (x-y)^2=0)}", cat: "Implicit Speed" },
+    { q: "y = \\frac{\\ln x}{x}", a: "y' = \\frac{1 - \\ln x}{x^2}", cat: "Quotient Rule" },
+    { q: "y = \\cos^4(2x)", a: "y' = -8 \\cos^3(2x) \\sin(2x)", cat: "Chain Rule" },
+    { q: "y = (x^2 + 1)^5", a: "y' = 10x(x^2 + 1)^4", cat: "Power Rule" },
+    { q: "y = \\tan^{-1}(x) \\text{ basics}", a: "y' = \\frac{1}{1+x^2}", cat: "Standard Form" },
+    { q: "y = e^{x^2} \\ln x", a: "y' = e^{x^2}(2x \\ln x + \\frac{1}{x})", cat: "Product Rule" },
+    { q: "y = \\sqrt[3]{(2x-1)^2}", a: "y' = \\frac{4}{3\\sqrt[3]{2x-1}}", cat: "Rational Power" },
+    { q: "y = \\sec(3x)", a: "y' = 3\\sec(3x)\\tan(3x)", cat: "Trigo Chain" },
+    { q: "y = \\frac{e^x}{1+e^x}", a: "y' = \\frac{e^x}{(1+e^x)^2}", cat: "Quotient Rule" },
+    { q: "x^3 + y^3 = 1", a: "y' = -\\frac{x^2}{y^2}", cat: "Implicit" },
+    { q: "y = \\ln(\\sqrt{x})", a: "y' = \\frac{1}{2x}", cat: "Log Power" },
+    { q: "y = \\sin(\\cos x)", a: "y' = -\\sin x \\cos(\\cos x)", cat: "Chain Rule" },
+    { q: "y = x^x \\text{ (Take ln!)}", a: "y' = x^x(1 + \\ln x)", cat: "Log-Diff" },
+    { q: "y = \\frac{1}{\\sin x + \\cos x}", a: "y' = \\frac{\\sin x - \\cos x}{(\\sin x + \\cos x)^2}", cat: "Quotient Rule" },
+    { q: "y = \\cos^2(x^2)", a: "y' = -4x \\cos(x^2) \\sin(x^2)", cat: "Triple Chain" },
+    { q: "y = \\sqrt{x + \\sqrt{x}}", a: "y' = \\frac{1 + \\frac{1}{2\\sqrt{x}}}{2\\sqrt{x + \\sqrt{x}}}", cat: "Inception Surd" }
+];

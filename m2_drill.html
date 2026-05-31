@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>M2 d/dx Speed Drill + Cat</title>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="C:\Users\maxwe\Downloads\question.js"></script>
+    
+    <style>
+        :root { --bg: #020617; --card: #0f172a; --text: #f8fafc; --accent: #38bdf8; }
+        body { font-family: 'Times New Roman', serif; background-color: var(--bg); color: var(--text); display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .container { background: var(--card); padding: 2rem; border-radius: 1.5rem; border: 1px solid #1e293b; width: 90%; max-width: 650px; text-align: center; position: relative; }
+        .timer { font-size: 3rem; font-family: monospace; color: var(--accent); margin: 10px 0; }
+        .cat-display { font-size: 3rem; margin-bottom: 10px; height: 60px; }
+        .question-box { min-height: 120px; background: rgba(255,255,255,0.03); border-radius: 1rem; margin: 1rem 0; padding: 1.5rem; }
+        .answer { display: none; margin-top: 1rem; color: #cbd5e1; background: rgba(34, 197, 94, 0.1); padding: 10px; border-radius: 8px; }
+        .btn-next { background: var(--accent); color: #000; padding: 10px 20px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .btn-reveal { background: transparent; color: var(--text); border: 1px solid #334155; padding: 10px 20px; border-radius: 8px; cursor: pointer; margin-left: 10px; }
+        #score { font-size: 0.9rem; color: #64748b; margin-top: 15px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="catEmoji" class="cat-display">🐾</div>
+    <div id="category" style="color: var(--accent); font-size: 0.8rem;">READY?</div>
+    <div class="timer" id="display">00.00</div>
+    
+    <div class="question-box">
+        <div id="questionText">\[ \text{Click NEXT to begin training} \]</div>
+        <div class="answer" id="answerText"></div>
+    </div>
+
+    <button class="btn-next" onclick="nextQuestion()">NEXT QUESTION</button>
+    <button class="btn-reveal" id="revealBtn" onclick="toggleAnswer()" disabled>SHOW ANSWER</button>
+    
+    <div id="score">Solved: 0</div>
+</div>
+
+<script>
+    let startTime, timerInterval, count = 0;
+    const cats = ["🐈", "cat", "😻", "😼", "😽", "😾", "🐆", "🐅", "🐈‍⬛"];
+
+    function nextQuestion() {
+        const idx = Math.floor(Math.random() * questions.length);
+        document.getElementById("questionText").innerHTML = "\\[ " + questions[idx].q + " \\]";
+        document.getElementById("answerText").innerHTML = "\\[ " + questions[idx].a + " \\]";
+        document.getElementById("category").textContent = questions[idx].cat;
+        document.getElementById("catEmoji").textContent = cats[count % cats.length];
+        
+        document.getElementById("answerText").style.display = "none";
+        document.getElementById("revealBtn").disabled = false;
+        
+        MathJax.typesetPromise();
+        clearInterval(timerInterval);
+        startTime = Date.now();
+        timerInterval = setInterval(() => {
+            document.getElementById("display").textContent = ((Date.now() - startTime) / 1000).toFixed(2);
+        }, 10);
+    }
+
+    function toggleAnswer() {
+        clearInterval(timerInterval);
+        document.getElementById("answerText").style.display = "block";
+        document.getElementById("revealBtn").disabled = true;
+        count++;
+        document.getElementById("score").textContent = "Solved: " + count;
+        MathJax.typesetPromise();
+    }
+</script>
+</body>
+</html>

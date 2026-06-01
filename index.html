@@ -8,15 +8,18 @@
     
     <style>
         :root { --bg: #020617; --card: #0f172a; --text: #f8fafc; --accent: #38bdf8; }
-        body { font-family: 'Times New Roman', serif; background-color: var(--bg); color: var(--text); display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .container { background: var(--card); padding: 2rem; border-radius: 1.5rem; border: 1px solid #1e293b; width: 90%; max-width: 650px; text-align: center; position: relative; }
+        body { font-family: 'Times New Roman', serif; background-color: var(--bg); color: var(--text); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .container { background: var(--card); padding: 2rem; border-radius: 1.5rem; border: 1px solid #1e293b; width: 90%; max-width: 650px; text-align: center; }
         .timer { font-size: 3rem; font-family: monospace; color: var(--accent); margin: 10px 0; font-variant-numeric: tabular-nums; }
         .cat-display { font-size: 3rem; margin-bottom: 10px; height: 60px; }
-        .question-box { min-height: 120px; background: rgba(255,255,255,0.03); border-radius: 1rem; margin: 1rem 0; padding: 1.5rem; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .stats-bar { display: flex; justify-content: center; gap: 20px; font-family: sans-serif; margin-bottom: 15px; }
+        .question-box { min-height: 120px; background: rgba(255,255,255,0.03); border-radius: 1rem; margin: 1rem 0; padding: 1.5rem; overflow-x: auto; }
         .answer { display: none; margin-top: 1rem; color: #cbd5e1; background: rgba(34, 197, 94, 0.1); padding: 10px; border-radius: 8px; }
-        .btn-next { background: var(--accent); color: #000; padding: 15px 25px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; touch-action: manipulation; }
-        .btn-reveal { background: transparent; color: var(--text); border: 1px solid #334155; padding: 15px 25px; border-radius: 8px; cursor: pointer; margin-left: 10px; touch-action: manipulation; }
-        #score { font-size: 0.9rem; color: #64748b; margin-top: 15px; }
+        .btn-next { background: var(--accent); color: #000; padding: 15px 25px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .btn-reveal { background: transparent; color: var(--text); border: 1px solid #334155; padding: 15px 25px; border-radius: 8px; cursor: pointer; margin-left: 10px; }
+        #scoreButtons { display: none; justify-content: center; gap: 10px; margin: 15px 0; }
+        .btn-score { padding: 12px 25px; border: none; border-radius: 8px; color: white; cursor: pointer; font-weight: bold; }
+        #solved-count { font-size: 0.9rem; color: #64748b; margin-top: 15px; }
     </style>
 </head>
 <body>
@@ -25,153 +28,147 @@
     <div id="catEmoji" class="cat-display">🐾</div>
     <div id="category" style="color: var(--accent); font-size: 0.8rem;">READY?</div>
     <div class="timer" id="display">00.00</div>
-    
+
+    <div class="stats-bar">
+        <span id="scoreDisplay">Score: 0</span>
+        <span id="streakDisplay" style="font-weight: bold;">Streak: 0x</span>
+    </div>
+
     <div class="question-box">
         <div id="questionText">\[ \text{Click NEXT to begin training} \]</div>
         <div class="answer" id="answerText"></div>
     </div>
 
-    <button class="btn-next" onclick="nextQuestion()">NEXT QUESTION</button>
-    <button class="btn-reveal" id="revealBtn" onclick="toggleAnswer()" disabled>SHOW ANSWER</button>
+    <div id="scoreButtons">
+        <button class="btn-score" onclick="markIncorrect()" style="background: #ff4444;">Wrong</button>
+        <button class="btn-score" onclick="markCorrect()" style="background: #00c851;">Correct</button>
+    </div>
+
+    <div id="controls">
+        <button class="btn-next" onclick="nextQuestion()">NEXT QUESTION</button>
+        <button class="btn-reveal" id="revealBtn" onclick="toggleAnswer()" disabled>SHOW ANSWER</button>
+    </div>
     
-    <div id="score">Solved: 0</div>
+    <div id="solved-count">Solved: 0</div>
 </div>
 
 <script>
-    // --- THE 100 QUESTIONS ---
     const questions = [
-        { q: "y = (3x^2 - 1)^5", a: "y' = 30x(3x^2 - 1)^4", cat: "Power Rule" },
-        { q: "y = \\frac{1}{x^3 + x}", a: "y' = -\\frac{3x^2+1}{(x^3+x)^2}", cat: "Power Rule" },
-        { q: "y = \\sqrt[4]{x^3}", a: "y' = \\frac{3}{4\\sqrt[4]{x}}", cat: "Rational Power" },
-        { q: "y = (1-x)^{-2}", a: "y' = 2(1-x)^{-3}", cat: "Power Rule" },
-        { q: "y = \\frac{2}{\\sqrt{x}}", a: "y' = -x^{-3/2}", cat: "Surd" },
-        { q: "y = \\sin^2 x", a: "y' = \\sin 2x", cat: "Trigo Identity" },
-        { q: "y = \\cos(x^2)", a: "y' = -2x\\sin(x^2)", cat: "Chain Rule" },
-        { q: "y = \\tan(3x+1)", a: "y' = 3\\sec^2(3x+1)", cat: "Chain Rule" },
-        { q: "y = \\sec^2 x", a: "y' = 2\\sec^2 x \\tan x", cat: "Trigo Chain" },
-        { q: "y = \\cot(2x)", a: "y' = -2\\csc^2(2x)", cat: "Standard Form" },
-        { q: "y = \\sin(x) \\cos(x)", a: "y' = \\cos 2x", cat: "Trigo Identity" },
-        { q: "y = \\sqrt{\\sin x}", a: "y' = \\frac{\\cos x}{2\\sqrt{\\sin x}}", cat: "Surd Chain" },
-        { q: "y = \\csc(x^3)", a: "y' = -3x^2\\csc(x^3)\\cot(x^3)", cat: "Trigo Chain" },
-        { q: "y = \\sin^3(2x)", a: "y' = 6\\sin^2(2x)\\cos(2x)", cat: "Trigo Chain" },
-        { q: "y = \\cos(\\tan x)", a: "y' = -\\sec^2 x \\sin(\\tan x)", cat: "Chain Rule" },
-        { q: "y = e^{-3x}", a: "y' = -3e^{-3x}", cat: "Exponential" },
-        { q: "y = e^{x^2+x}", a: "y' = (2x+1)e^{x^2+x}", cat: "Exponential" },
-        { q: "y = x^2 e^x", a: "y' = x e^x(x+2)", cat: "Product Rule" },
-        { q: "y = \\ln(5x)", a: "y' = 1/x", cat: "Log Prop" },
-        { q: "y = \\ln(x^2)", a: "y' = 2/x", cat: "Log Prop" },
-        { q: "y = e^{\\sin x}", a: "y' = \\cos x e^{\\sin x}", cat: "Chain Rule" },
-        { q: "y = \\frac{e^x + e^{-x}}{2}", a: "y' = \\frac{e^x - e^{-x}}{2}", cat: "Hyperbolic" },
-        { q: "y = \\ln(\\sec x)", a: "y' = \\tan x", cat: "Log-Trigo" },
-        { q: "y = e^{x}/x", a: "y' = \\frac{e^x(x-1)}{x^2}", cat: "Quotient Rule" },
-        { q: "y = \\ln(\\ln x)", a: "y' = \\frac{1}{x \\ln x}", cat: "Double Log" },
-        { q: "x^3 + y^3 = 3xy", a: "y' = \\frac{y-x^2}{y^2-x}", cat: "Folium" },
-        { q: "y = \\sin^{-1}(3x)", a: "y' = \\frac{3}{\\sqrt{1-9x^2}}", cat: "Inverse Trigo" },
-        { q: "y = \\cos^{-1}(x^2)", a: "y' = \\frac{-2x}{\\sqrt{1-x^4}}", cat: "Inverse Trigo" },
-        { q: "y = \\tan^{-1}(e^x)", a: "y' = \\frac{e^x}{1+e^{2x}}", cat: "Inverse Trigo" },
-        { q: "x e^y = y", a: "y' = \\frac{e^y}{1 - x e^y}", cat: "Implicit" },
-        { q: "y = \\sec^{-1} x", a: "y' = \\frac{1}{|x|\\sqrt{x^2-1}}", cat: "Standard Form" },
-        { q: "y = \\sqrt{x + \\sqrt{x}}", a: "y' = \\frac{1}{2\\sqrt{x+\\sqrt{x}}}(1 + \\frac{1}{2\\sqrt{x}})", cat: "Nested Chain" },
-        { q: "y = (x^2+1)^3(x^3-1)^2", a: "y' = 6x(x^2+1)^2(x^3-1)^2 + 6x^2(x^2+1)^3(x^3-1)", cat: "Product Rule" },
-        { q: "y = \\ln(\\sqrt{\\frac{1+x}{1-x}})", a: "y' = \\frac{1}{1-x^2}", cat: "Log Prop" },
-        { q: "y = x^2 \\sin(1/x)", a: "y' = 2x\\sin(1/x) - \\cos(1/x)", cat: "Product Rule" },
-        { q: "y = \\sin^2(x) \\cos(x)", a: "y' = \\sin x(2\\cos^2 x - \\sin^2 x)", cat: "Product Rule" },
-        { q: "y = e^x \\sin x \\cos x", a: "y' = \\frac{1}{2}e^x(\\sin 2x + 2\\cos 2x)", cat: "Triple Product" },
-        { q: "y = \\ln(x + \\sqrt{x^2+1})", a: "y' = \\frac{1}{\\sqrt{x^2+1}}", cat: "Log-Surd" },
-        { q: "y = \\frac{\\sin x + \\cos x}{\\sin x - \\cos x}", a: "y' = \\frac{-2}{(\\sin x - \\cos x)^2}", cat: "Quotient Rule" },
-        { q: "y = (\\ln x)^3", a: "y' = \\frac{3(\\ln x)^2}{x}", cat: "Chain Rule" },
-        { q: "y = x^{\\pi} + \\pi^x", a: "y' = \\pi x^{\\pi-1} + \\pi^x \\ln \\pi", cat: "Power vs Exp" },
-        { q: "y = \\tan x, \\text{ find } y''", a: "y'' = 2\\sec^2 x \\tan x", cat: "2nd Deriv" },
-        { q: "y = x e^{-x}, \\text{ find } y''", a: "y'' = e^{-x}(x-2)", cat: "2nd Deriv" },
-        { q: "y = \\ln x, \\text{ find } y''", a: "y'' = -1/x^2", cat: "2nd Deriv" },
-        { q: "y = \\sin(2x), \\text{ find } y''", a: "y'' = -4\\sin(2x)", cat: "2nd Deriv" },
-        { q: "y = (1+1/x)^x", a: "y' = y[\\ln(1+1/x) - \\frac{1}{x+1}]", cat: "Log-Diff" },
-        { q: "y = \\frac{(x+1)^2}{\\sqrt{x-1}}", a: "y' = y[\\frac{2}{x+1} - \\frac{1}{2(x-1)}]", cat: "Log-Diff" },
-        { q: "y = x^{\\ln x}", a: "y' = 2x^{\\ln x - 1} \\ln x", cat: "Log-Diff" },
-        { q: "y = (\\sin x)^x", a: "y' = y[\\ln(\\sin x) + x \\cot x]", cat: "Log-Diff" },
-        { q: "y = \\frac{x^2+1}{x^2-1}", a: "y' = \\frac{-4x}{(x^2-1)^2}", cat: "Quotient Rule" },
-        { q: "y = \\sqrt{1 + \\sqrt{1+x}}", a: "y' = \\frac{1}{8\\sqrt{1+\\sqrt{1+x}}\\sqrt{1+x}}", cat: "Extreme Chain" },
-        { q: "y = \\ln(ax^2+bx+c)", a: "y' = \\frac{2ax+b}{ax^2+bx+c}", cat: "Chain Rule" },
-        { q: "y = \\sin^{-1}(\\cos x)", a: "y' = -1", cat: "Inverse Identity" },
-        { q: "y = e^{e^x}", a: "y' = e^{e^x} e^x", cat: "Exponential" },
-        { q: "y = \\ln(\\frac{1+x}{1-x})", a: "y' = \\frac{2}{1-x^2}", cat: "Log Prop" },
-        { q: "y = x^2 2^x", a: "y' = x 2^x(2 + x\\ln 2)", cat: "Product Rule" },
-        { q: "y = \\tan^3(x^2)", a: "y' = 6x\\tan^2(x^2)\\sec^2(x^2)", cat: "Triple Chain" },
-        { q: "y = \\sqrt[5]{(x^2-1)^2}", a: "y' = \\frac{4x}{5(x^2-1)^{3/5}}", cat: "Rational Power" },
-        { q: "y = \\frac{1}{\\ln x}", a: "y' = -\\frac{1}{x(\\ln x)^2}", cat: "Power Rule" },
-        { q: "y = e^{3x} \\sin(4x)", a: "y' = e^{3x}(3\\sin 4x + 4\\cos 4x)", cat: "Product Rule" },
-        { q: "y = \\ln(x^2 e^x)", a: "y' = \\frac{2}{x} + 1", cat: "Log Prop" },
-        { q: "y = \\tan^{-1}(\\frac{1}{x})", a: "y' = -\\frac{1}{1+x^2}", cat: "Inverse Trigo" },
-        { q: "y = \\frac{\\sqrt{x}}{x+1}", a: "y' = \\frac{1-x}{2\\sqrt{x}(x+1)^2}", cat: "Quotient Rule" },
-        { q: "y = \\cos^2(\\sin x)", a: "y' = -\\cos x \\sin(2\\sin x)", cat: "Chain Rule" },
-        { q: "y = \\ln(\\sqrt{x^2+a^2})", a: "y' = \\frac{x}{x^2+a^2}", cat: "Log Prop" },
-        { q: "y = e^{\\sqrt{x}}", a: "y' = \\frac{e^{\\sqrt{x}}}{2\\sqrt{x}}", cat: "Exponential" },
-        { q: "y = \\frac{\\ln x}{x^2}", a: "y' = \\frac{1-2\\ln x}{x^3}", cat: "Quotient Rule" },
-        { q: "y = \\sin(e^x \\ln x)", a: "y' = e^x(\\ln x + \\frac{1}{x})\\cos(e^x \\ln x)", cat: "Chain Rule" },
-        { q: "y = (x^2+1)^{x}", a: "y' = y[\\ln(x^2+1) + \\frac{2x^2}{x^2+1}]", cat: "Log-Diff" },
-        { q: "y = \\frac{e^x - 1}{e^x + 1}", a: "y' = \\frac{2e^x}{(e^x+1)^2}", cat: "Quotient Rule" },
-        { q: "y = \\cos(x) \\ln(\\sin x)", a: "y' = \\cos x \\cot x - \\sin x \\ln(\\sin x)", cat: "Product Rule" },
-        { q: "y = \\sqrt[3]{1+x^3}", a: "y' = \\frac{x^2}{(1+x^3)^{2/3}}", cat: "Rational Power" },
-        { q: "y = \\tan(\\sin^{-1} x)", a: "y' = (1-x^2)^{-3/2}", cat: "Inverse Trigo" },
-        { q: "y = \\ln(x^3 + 2)(x^2 + 5)", a: "y' = \\frac{3x^2(x^2+5)}{x^3+2} + 2x\\ln(x^3+2)", cat: "Product Rule" },
-        { q: "y = \\sin^4 x + \\cos^4 x", a: "y' = -\\sin 4x", cat: "Trigo Identity" },
-        { q: "y = e^{x^2} \\sin^{-1} x", a: "y' = 2x e^{x^2} \\sin^{-1} x + \\frac{e^{x^2}}{\\sqrt{1-x^2}}", cat: "Product Rule" },
-        { q: "y = \\frac{x^n}{e^x}", a: "y' = \\frac{x^{n-1}(n-x)}{e^x}", cat: "Quotient Rule" },
-        { q: "y = \\ln(\\sqrt{1+e^x})", a: "y' = \\frac{e^x}{2(1+e^x)}", cat: "Log Prop" },
-        { q: "y = (x+1)^x", a: "y' = (x+1)^x[\\ln(x+1) + \\frac{x}{x+1}]", cat: "Log-Diff" },
-        { q: "y = \\frac{1}{1 + e^{-x}}", a: "y' = \\frac{e^{-x}}{(1+e^{-x})^2}", cat: "Power Rule" },
-        { q: "y = \\ln(\\tan(x/2))", a: "y' = \\csc x", cat: "Log-Trigo" },
-        { q: "y = x \\ln^2 x", a: "y' = \\ln x (\\ln x + 2)", cat: "Product Rule" },
-        { q: "y = \\cos^{-1}(\\frac{1-x^2}{1+x^2})", a: "y' = \\frac{2}{1+x^2}", cat: "Inverse Trigo" },
-        { q: "y = \\sqrt{\\frac{1-\\cos x}{1+\\cos x}}", a: "y' = \\frac{1}{2}\\sec^2(x/2)", cat: "Trigo Identity" },
-        { q: "y = e^x \\cos(e^x)", a: "y' = e^x[\\cos(e^x) - e^x\\sin(e^x)]", cat: "Product Rule" },
-        { q: "y = \\ln(\\frac{x}{\\sqrt{x^2+1}})", a: "y' = \\frac{1}{x(x^2+1)}", cat: "Log Prop" },
-        { q: "y = (2x+3)^k", a: "y' = 2k(2x+3)^{k-1}", cat: "General Power" },
-        { q: "y = \\sin(ax+b)", a: "y' = a\\cos(ax+b)", cat: "General Trigo" },
-        { q: "y = e^{kx}", a: "y' = k e^{kx}", cat: "General Exp" },
-        { q: "y = \\frac{1}{ax+b}", a: "y' = \\frac{-a}{(ax+b)^2}", cat: "General Power" },
-        { q: "y = \\ln|kx|", a: "y' = 1/x", cat: "Log Prop" }
+        { q: "y = x^2 \\cos(3x)", a: "y' = -3x^2 \\sin(3x) + 2x \\cos(3x)", cat: "Product" },
+        { q: "y = e^{2x} \\ln(x)", a: "y' = \\frac{e^{2x}}{x} + 2e^{2x} \\ln(x)", cat: "Product" },
+        { q: "y = \\sin(x) \\tan(2x)", a: "y' = 2\\sin(x) \\sec^2(2x) + \\cos(x) \\tan(2x)", cat: "Product" },
+        { q: "y = x^4 e^{-x}", a: "y' = -x^4 e^{-x} + 4x^3 e^{-x}", cat: "Product" },
+        { q: "y = \\ln(3x) \\cos(x)", a: "y' = -\\ln(3x) \\sin(x) + \\frac{\\cos(x)}{x}", cat: "Product" },
+        { q: "y = \\sqrt{x} e^{5x}", a: "y' = 5\\sqrt{x} e^{5x} + \\frac{e^{5x}}{2\\sqrt{x}}", cat: "Product" },
+        { q: "y = (x^3+1) \\sin(x)", a: "y' = (x^3+1) \\cos(x) + 3x^2 \\sin(x)", cat: "Product" },
+        { q: "y = \\tan^{-1}(x) e^{x}", a: "y' = \\frac{e^x}{1+x^2} + e^x \\tan^{-1}(x)", cat: "Product" },
+        { q: "y = x \\ln(x^2)", a: "y' = x(\\frac{2}{x}) + \\ln(x^2)", cat: "Product" },
+        { q: "y = e^{x} \\cos^2(x)", a: "y' = -2e^x \\cos(x) \\sin(x) + e^x \\cos^2(x)", cat: "Product" },
+        { q: "y = \\frac{e^{4x}}{x^3}", a: "y' = \\frac{4x^3 e^{4x} - 3x^2 e^{4x}}{x^6}", cat: "Quotient" },
+        { q: "y = \\frac{\\ln(x)}{x+2}", a: "y' = \\frac{(x+2)/x - \\ln(x)}{(x+2)^2}", cat: "Quotient" },
+        { q: "y = \\frac{\\sin(2x)}{\\cos(x)}", a: "y' = \\frac{2\\cos(2x)\\cos(x) + \\sin(2x)\\sin(x)}{\\cos^2(x)}", cat: "Quotient" },
+        { q: "y = \\frac{x^2}{e^{3x}}", a: "y' = \\frac{2x e^{3x} - 3x^2 e^{3x}}{e^{6x}}", cat: "Quotient" },
+        { q: "y = \\frac{\\tan(x)}{\\sqrt{x}}", a: "y' = \\frac{\\sqrt{x} \\sec^2(x) - \\tan(x)/(2\\sqrt{x})}{x}", cat: "Quotient" },
+        { q: "y = \\frac{\\cos(3x)}{x}", a: "y' = \\frac{-3x \\sin(3x) - \\cos(3x)}{x^2}", cat: "Quotient" },
+        { q: "y = \\frac{e^{-x}}{\\sin(x)}", a: "y' = \\frac{-e^{-x} \\sin(x) - e^{-x} \\cos(x)}{\\sin^2(x)}", cat: "Quotient" },
+        { q: "y = \\frac{\\ln(2x)}{e^x}", a: "y' = \\frac{e^x/x - e^x \\ln(2x)}{e^{2x}}", cat: "Quotient" },
+        { q: "y = \\frac{x+1}{\\tan(x)}", a: "y' = \\frac{\\tan(x) - (x+1)\\sec^2(x)}{\\tan^2(x)}", cat: "Quotient" },
+        { q: "y = \\frac{\\sin^{-1}(x)}{x^2}", a: "y' = \\frac{x^2/\\sqrt{1-x^2} - 2x \\sin^{-1}(x)}{x^4}", cat: "Quotient" },
+        { q: "y = \\cos(e^{x^2})", a: "y' = -2x e^{x^2} \\sin(e^{x^2})", cat: "Chain" },
+        { q: "y = \\ln(\\sin 4x)", a: "y' = \\frac{4\\cos(4x)}{\\sin(4x)}", cat: "Chain" },
+        { q: "y = e^{\\tan^{-1}(2x)}", a: "y' = \\frac{2e^{\\tan^{-1}(2x)}}{1+4x^2}", cat: "Chain" },
+        { q: "y = (3x^2-5)^4", a: "y' = 24x(3x^2-5)^3", cat: "Chain" },
+        { q: "y = \\sqrt{\\tan x}", a: "y' = \\frac{\\sec^2(x)}{2\\sqrt{\\tan x}}", cat: "Chain" },
+        { q: "y = \\sin^4(x)", a: "y' = 4\\sin^3(x) \\cos(x)", cat: "Chain" },
+        { q: "y = \\ln^2(3x)", a: "y' = \\frac{2\\ln(3x)}{x}", cat: "Chain" },
+        { q: "y = \\exp(\\cos 2x)", a: "y' = -2\\sin(2x) e^{\\cos 2x}", cat: "Chain" },
+        { q: "y = \\tan(x^3)", a: "y' = 3x^2 \\sec^2(x^3)", cat: "Chain" },
+        { q: "y = \\sqrt{e^x + 1}", a: "y' = \\frac{e^x}{2\\sqrt{e^x+1}}", cat: "Chain" },
+        { q: "y = \\sin(\\ln(\\cos x))", a: "y' = -\\tan(x) \\cos(\\ln(\\cos x))", cat: "Triple" },
+        { q: "y = e^{\\sqrt{\\sin x}}", a: "y' = \\frac{\\cos(x) e^{\\sqrt{\\sin x}}}{2\\sqrt{\\sin x}}", cat: "Triple" },
+        { q: "y = \\ln(\\tan^2 x)", a: "y' = \\frac{2\\sec^2(x)}{\\tan(x)}", cat: "Triple" },
+        { q: "y = \\cos^2(e^{3x})", a: "y' = -6e^{3x} \\cos(e^{3x}) \\sin(e^{3x})", cat: "Triple" },
+        { q: "y = \\sqrt{1 + \\ln x}", a: "y' = \\frac{1}{2x\\sqrt{1+\\ln x}}", cat: "Triple" },
+        { q: "y = \\tan(\\sin 2x)", a: "y' = 2\\cos(2x) \\sec^2(\\sin 2x)", cat: "Triple" },
+        { q: "y = \\ln(x^2 e^{x})", a: "y' = \\frac{2x e^x + x^2 e^x}{x^2 e^x}", cat: "Log-Prod" },
+        { q: "y = e^{x^2} \\sin(x^2)", a: "y' = 2x e^{x^2} \\sin(x^2) + 2x e^{x^2} \\cos(x^2)", cat: "Prod-Chain" },
+        { q: "y = \\sin^{-1}(\\sqrt{x})", a: "y' = \\frac{1}{2\\sqrt{x}\\sqrt{1-x}}", cat: "Inverse" },
+        { q: "y = \\cos(\\ln^2 x)", a: "y' = -\\frac{2\\ln(x) \\sin(\\ln^2 x)}{x}", cat: "Triple" },
+        { q: "y = e^{-3x}, \\text{find } y''", a: "y'' = 9e^{-3x}", cat: "2nd Deriv" },
+        { q: "y = \\sin(4x), \\text{find } y''", a: "y'' = -16\\sin(4x)", cat: "2nd Deriv" },
+        { q: "y = \\ln(x^3), \\text{find } y''", a: "y'' = -3/x^2", cat: "2nd Deriv" },
+        { q: "y = x e^{2x}, \\text{find } y''", a: "y'' = 4x e^{2x} + 4e^{2x}", cat: "2nd Deriv" },
+        { q: "y = \\frac{1}{x}, \\text{find } y''", a: "y'' = 2/x^3", cat: "2nd Deriv" },
+        { q: "y = \\tan(x), \\text{find } y''", a: "y'' = 2\\sec^2(x) \\tan(x)", cat: "2nd Deriv" },
+        { q: "y = \\cos^2(x), \\text{find } y' \\text{ (first step)}", a: "y' = -2\\sin(x) \\cos(x)", cat: "Chain" },
+        { q: "y = \\sqrt{2x+1}, \\text{find } y''", a: "y'' = -4/(2x+1)^{3/2}", cat: "2nd Deriv" },
+        { q: "y = x^2 \\ln x, \\text{find } y''", a: "y'' = 2\\ln(x) + 3", cat: "2nd Deriv" },
+        { q: "y = e^{x^2}, \\text{find } y' \\text{ (first step)}", a: "y' = 2x e^{x^2}", cat: "Chain" }
     ];
 
-    let startTime, timerInterval, count = 0;
-    const cats = ["🐈", "😻", "😼", "😽", "😾", "🐆", "🐅", "🐈‍⬛", "🦁", "🙀", "🐾", "🧶"];
+    let startTime, timerInterval, solvedCount = 0;
+    let score = 0, streak = 0, currentElapsed = 0;
     let remainingQuestions = [];
+    const cats = ["🐈", "😻", "😼", "😽", "😾", "🐆", "🐅", "🐈‍⬛", "🦁", "🙀", "🐾", "🧶"];
+
+    function updateUI() {
+        document.getElementById('scoreDisplay').innerText = `Score: ${score}`;
+        document.getElementById('streakDisplay').innerText = `Streak: ${streak}x`;
+        document.getElementById('streakDisplay').style.color = streak > 5 ? "orange" : "white";
+        document.getElementById('solved-count').textContent = "Solved: " + solvedCount;
+    }
 
     function nextQuestion() {
         if (remainingQuestions.length === 0) {
             remainingQuestions = [...questions];
-            if (count > 0) alert("🎉 You've cleared all questions! Restarting the set.");
+            if (solvedCount > 0) alert("Set cleared! Restarting.");
         }
 
-        const randomIndex = Math.floor(Math.random() * remainingQuestions.length);
-        const currentQ = remainingQuestions[randomIndex];
-        remainingQuestions.splice(randomIndex, 1);
+        const idx = Math.floor(Math.random() * remainingQuestions.length);
+        const currentQ = remainingQuestions[idx];
+        remainingQuestions.splice(idx, 1);
 
         document.getElementById("questionText").innerHTML = "\\[ " + currentQ.q + " \\]";
         document.getElementById("answerText").innerHTML = "\\[ " + currentQ.a + " \\]";
         document.getElementById("category").textContent = currentQ.cat + " (Left: " + remainingQuestions.length + ")";
-        document.getElementById("catEmoji").textContent = cats[count % cats.length];
+        document.getElementById("catEmoji").textContent = cats[solvedCount % cats.length];
         
         document.getElementById("answerText").style.display = "none";
+        document.getElementById("scoreButtons").style.display = "none";
         document.getElementById("revealBtn").disabled = false;
-        
+        document.getElementById("display").style.color = "var(--accent)";
+
         if (window.MathJax) MathJax.typesetPromise();
 
         clearInterval(timerInterval);
         startTime = Date.now();
         timerInterval = setInterval(() => {
-            const elapsedTime = (Date.now() - startTime) / 1000;
-            document.getElementById("display").textContent = elapsedTime.toFixed(2);
+            currentElapsed = (Date.now() - startTime) / 1000;
+            document.getElementById("display").textContent = currentElapsed.toFixed(2);
         }, 10);
     }
 
     function toggleAnswer() {
         clearInterval(timerInterval);
         document.getElementById("answerText").style.display = "block";
+        document.getElementById("scoreButtons").style.display = "flex";
         document.getElementById("revealBtn").disabled = true;
-        count++;
-        document.getElementById("score").textContent = "Solved: " + count;
         if (window.MathJax) MathJax.typesetPromise();
+    }
+
+    function markCorrect() {
+        streak++;
+        let bonus = currentElapsed < 5 ? 2 : 1;
+        score += 10 * streak * bonus;
+        solvedCount++;
+        updateUI();
+        nextQuestion();
+    }
+
+    function markIncorrect() {
+        streak = 0;
+        updateUI();
+        nextQuestion();
     }
 </script>
 </body>

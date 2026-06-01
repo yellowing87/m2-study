@@ -3,172 +3,227 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
     <meta charset="UTF-8">
-    <title>M2 d/dx Speed Drill + Cat</title>
+    <title>M2 Speedrun Mastery</title>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-    
     <style>
-        :root { --bg: #020617; --card: #0f172a; --text: #f8fafc; --accent: #38bdf8; }
-        body { font-family: 'Times New Roman', serif; background-color: var(--bg); color: var(--text); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        .container { background: var(--card); padding: 2rem; border-radius: 1.5rem; border: 1px solid #1e293b; width: 90%; max-width: 650px; text-align: center; }
-        .timer { font-size: 3rem; font-family: monospace; color: var(--accent); margin: 10px 0; font-variant-numeric: tabular-nums; }
-        .cat-display { font-size: 3rem; margin-bottom: 10px; height: 60px; }
-        .stats-bar { display: flex; justify-content: center; gap: 20px; font-family: sans-serif; margin-bottom: 15px; }
-        .question-box { min-height: 120px; background: rgba(255,255,255,0.03); border-radius: 1rem; margin: 1rem 0; padding: 1.5rem; overflow-x: auto; }
-        .answer { display: none; margin-top: 1rem; color: #cbd5e1; background: rgba(34, 197, 94, 0.1); padding: 10px; border-radius: 8px; }
-        .btn-next { background: var(--accent); color: #000; padding: 15px 25px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        .btn-reveal { background: transparent; color: var(--text); border: 1px solid #334155; padding: 15px 25px; border-radius: 8px; cursor: pointer; margin-left: 10px; }
-        #scoreButtons { display: none; justify-content: center; gap: 10px; margin: 15px 0; }
-        .btn-score { padding: 12px 25px; border: none; border-radius: 8px; color: white; cursor: pointer; font-weight: bold; }
-        #solved-count { font-size: 0.9rem; color: #64748b; margin-top: 15px; }
+        :root { --bg: #020617; --card: #0f172a; --text: #f8fafc; --accent: #38bdf8; --correct: #00c851; --wrong: #ff4444; }
+        body { font-family: 'Times New Roman', serif; background-color: var(--bg); color: var(--text); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px 0; }
+        .container { background: var(--card); padding: 2rem; border-radius: 1.5rem; border: 1px solid #1e293b; width: 90%; max-width: 600px; text-align: center; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
+        .timer { font-size: 3.5rem; font-family: monospace; color: var(--accent); margin: 5px 0; }
+        .mastery-text { font-family: sans-serif; font-size: 0.75rem; color: #94a3b8; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
+        .progress-bar { font-family: sans-serif; font-size: 1.2rem; font-weight: bold; color: #f8fafc; margin-bottom: 10px; }
+        .question-box { min-height: 140px; background: rgba(255,255,255,0.02); border-radius: 1rem; margin: 1rem 0; padding: 1.5rem; border: 1px solid #334155; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+        .answer { display: none; margin-top: 1rem; color: #cbd5e1; background: rgba(34, 197, 94, 0.1); padding: 15px; border-radius: 8px; border-left: 4px solid var(--correct); width: 90%; }
+        .btn-main { background: var(--accent); color: #000; padding: 18px 30px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 1.1rem; width: 100%; transition: transform 0.1s; }
+        .btn-reveal { background: transparent; color: var(--text); border: 1px solid #334155; padding: 15px 30px; border-radius: 8px; cursor: pointer; width: 100%; margin-top: 10px; }
+        #scoreButtons { display: none; justify-content: center; gap: 15px; margin: 20px 0; width: 100%; }
+        .btn-score { padding: 15px 20px; border: none; border-radius: 8px; color: white; cursor: pointer; font-weight: bold; flex: 1; }
+        #leaderboard { margin-top: 25px; padding-top: 20px; border-top: 1px solid #1e293b; text-align: left; }
+        .lb-item { display: flex; justify-content: space-between; padding: 8px 12px; background: rgba(255,255,255,0.03); margin-bottom: 4px; border-radius: 6px; font-family: sans-serif; font-size: 0.9rem; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div id="catEmoji" class="cat-display">🐾</div>
-    <div id="category" style="color: var(--accent); font-size: 0.8rem;">READY?</div>
+    <div id="masteryDisplay" class="mastery-text">Mastery: 0/0 Questions</div>
+    <div class="progress-bar" id="progressDisplay">M2 SPEEDRUN</div>
     <div class="timer" id="display">00.00</div>
 
-    <div class="stats-bar">
-        <span id="scoreDisplay">Score: 0</span>
-        <span id="streakDisplay" style="font-weight: bold;">Streak: 0x</span>
-    </div>
-
     <div class="question-box">
-        <div id="questionText">\[ \text{Click NEXT to begin training} \]</div>
+        <div id="questionText">\[ \text{Press START to begin} \]</div>
         <div class="answer" id="answerText"></div>
     </div>
 
     <div id="scoreButtons">
-        <button class="btn-score" onclick="markIncorrect()" style="background: #ff4444;">Wrong</button>
-        <button class="btn-score" onclick="markCorrect()" style="background: #00c851;">Correct</button>
+        <button class="btn-score" onclick="handleResult(false)" style="background: var(--wrong);">WRONG (+5s)</button>
+        <button class="btn-score" onclick="handleResult(true)" style="background: var(--correct);">CORRECT</button>
     </div>
 
     <div id="controls">
-        <button class="btn-next" onclick="nextQuestion()">NEXT QUESTION</button>
-        <button class="btn-reveal" id="revealBtn" onclick="toggleAnswer()" disabled>SHOW ANSWER</button>
+        <button class="btn-main" id="startBtn" onclick="startSprint()">START 10-Q SPRINT</button>
+        <button class="btn-reveal" id="revealBtn" onclick="toggleAnswer()" style="display:none;">SHOW ANSWER</button>
     </div>
-    
-    <div id="solved-count">Solved: 0</div>
+
+    <div id="leaderboard">
+        <div style="color:var(--accent); font-size:0.8rem; text-align:center; margin-bottom:10px; font-family:sans-serif;">🏆 TOP TIMES</div>
+        <div id="leaderboardList"></div>
+    </div>
 </div>
 
 <script>
-    const questions = [
-        { q: "y = x^2 \\cos(3x)", a: "y' = -3x^2 \\sin(3x) + 2x \\cos(3x)", cat: "Product" },
-        { q: "y = e^{2x} \\ln(x)", a: "y' = \\frac{e^{2x}}{x} + 2e^{2x} \\ln(x)", cat: "Product" },
-        { q: "y = \\sin(x) \\tan(2x)", a: "y' = 2\\sin(x) \\sec^2(2x) + \\cos(x) \\tan(2x)", cat: "Product" },
-        { q: "y = x^4 e^{-x}", a: "y' = -x^4 e^{-x} + 4x^3 e^{-x}", cat: "Product" },
-        { q: "y = \\ln(3x) \\cos(x)", a: "y' = -\\ln(3x) \\sin(x) + \\frac{\\cos(x)}{x}", cat: "Product" },
-        { q: "y = \\sqrt{x} e^{5x}", a: "y' = 5\\sqrt{x} e^{5x} + \\frac{e^{5x}}{2\\sqrt{x}}", cat: "Product" },
-        { q: "y = (x^3+1) \\sin(x)", a: "y' = (x^3+1) \\cos(x) + 3x^2 \\sin(x)", cat: "Product" },
-        { q: "y = \\tan^{-1}(x) e^{x}", a: "y' = \\frac{e^x}{1+x^2} + e^x \\tan^{-1}(x)", cat: "Product" },
-        { q: "y = x \\ln(x^2)", a: "y' = x(\\frac{2}{x}) + \\ln(x^2)", cat: "Product" },
-        { q: "y = e^{x} \\cos^2(x)", a: "y' = -2e^x \\cos(x) \\sin(x) + e^x \\cos^2(x)", cat: "Product" },
-        { q: "y = \\frac{e^{4x}}{x^3}", a: "y' = \\frac{4x^3 e^{4x} - 3x^2 e^{4x}}{x^6}", cat: "Quotient" },
-        { q: "y = \\frac{\\ln(x)}{x+2}", a: "y' = \\frac{(x+2)/x - \\ln(x)}{(x+2)^2}", cat: "Quotient" },
-        { q: "y = \\frac{\\sin(2x)}{\\cos(x)}", a: "y' = \\frac{2\\cos(2x)\\cos(x) + \\sin(2x)\\sin(x)}{\\cos^2(x)}", cat: "Quotient" },
-        { q: "y = \\frac{x^2}{e^{3x}}", a: "y' = \\frac{2x e^{3x} - 3x^2 e^{3x}}{e^{6x}}", cat: "Quotient" },
-        { q: "y = \\frac{\\tan(x)}{\\sqrt{x}}", a: "y' = \\frac{\\sqrt{x} \\sec^2(x) - \\tan(x)/(2\\sqrt{x})}{x}", cat: "Quotient" },
-        { q: "y = \\frac{\\cos(3x)}{x}", a: "y' = \\frac{-3x \\sin(3x) - \\cos(3x)}{x^2}", cat: "Quotient" },
-        { q: "y = \\frac{e^{-x}}{\\sin(x)}", a: "y' = \\frac{-e^{-x} \\sin(x) - e^{-x} \\cos(x)}{\\sin^2(x)}", cat: "Quotient" },
-        { q: "y = \\frac{\\ln(2x)}{e^x}", a: "y' = \\frac{e^x/x - e^x \\ln(2x)}{e^{2x}}", cat: "Quotient" },
-        { q: "y = \\frac{x+1}{\\tan(x)}", a: "y' = \\frac{\\tan(x) - (x+1)\\sec^2(x)}{\\tan^2(x)}", cat: "Quotient" },
-        { q: "y = \\frac{\\sin^{-1}(x)}{x^2}", a: "y' = \\frac{x^2/\\sqrt{1-x^2} - 2x \\sin^{-1}(x)}{x^4}", cat: "Quotient" },
-        { q: "y = \\cos(e^{x^2})", a: "y' = -2x e^{x^2} \\sin(e^{x^2})", cat: "Chain" },
-        { q: "y = \\ln(\\sin 4x)", a: "y' = \\frac{4\\cos(4x)}{\\sin(4x)}", cat: "Chain" },
-        { q: "y = e^{\\tan^{-1}(2x)}", a: "y' = \\frac{2e^{\\tan^{-1}(2x)}}{1+4x^2}", cat: "Chain" },
-        { q: "y = (3x^2-5)^4", a: "y' = 24x(3x^2-5)^3", cat: "Chain" },
-        { q: "y = \\sqrt{\\tan x}", a: "y' = \\frac{\\sec^2(x)}{2\\sqrt{\\tan x}}", cat: "Chain" },
-        { q: "y = \\sin^4(x)", a: "y' = 4\\sin^3(x) \\cos(x)", cat: "Chain" },
-        { q: "y = \\ln^2(3x)", a: "y' = \\frac{2\\ln(3x)}{x}", cat: "Chain" },
-        { q: "y = \\exp(\\cos 2x)", a: "y' = -2\\sin(2x) e^{\\cos 2x}", cat: "Chain" },
-        { q: "y = \\tan(x^3)", a: "y' = 3x^2 \\sec^2(x^3)", cat: "Chain" },
-        { q: "y = \\sqrt{e^x + 1}", a: "y' = \\frac{e^x}{2\\sqrt{e^x+1}}", cat: "Chain" },
-        { q: "y = \\sin(\\ln(\\cos x))", a: "y' = -\\tan(x) \\cos(\\ln(\\cos x))", cat: "Triple" },
-        { q: "y = e^{\\sqrt{\\sin x}}", a: "y' = \\frac{\\cos(x) e^{\\sqrt{\\sin x}}}{2\\sqrt{\\sin x}}", cat: "Triple" },
-        { q: "y = \\ln(\\tan^2 x)", a: "y' = \\frac{2\\sec^2(x)}{\\tan(x)}", cat: "Triple" },
-        { q: "y = \\cos^2(e^{3x})", a: "y' = -6e^{3x} \\cos(e^{3x}) \\sin(e^{3x})", cat: "Triple" },
-        { q: "y = \\sqrt{1 + \\ln x}", a: "y' = \\frac{1}{2x\\sqrt{1+\\ln x}}", cat: "Triple" },
-        { q: "y = \\tan(\\sin 2x)", a: "y' = 2\\cos(2x) \\sec^2(\\sin 2x)", cat: "Triple" },
-        { q: "y = \\ln(x^2 e^{x})", a: "y' = \\frac{2x e^x + x^2 e^x}{x^2 e^x}", cat: "Log-Prod" },
-        { q: "y = e^{x^2} \\sin(x^2)", a: "y' = 2x e^{x^2} \\sin(x^2) + 2x e^{x^2} \\cos(x^2)", cat: "Prod-Chain" },
-        { q: "y = \\sin^{-1}(\\sqrt{x})", a: "y' = \\frac{1}{2\\sqrt{x}\\sqrt{1-x}}", cat: "Inverse" },
-        { q: "y = \\cos(\\ln^2 x)", a: "y' = -\\frac{2\\ln(x) \\sin(\\ln^2 x)}{x}", cat: "Triple" },
-        { q: "y = e^{-3x}, \\text{find } y''", a: "y'' = 9e^{-3x}", cat: "2nd Deriv" },
-        { q: "y = \\sin(4x), \\text{find } y''", a: "y'' = -16\\sin(4x)", cat: "2nd Deriv" },
-        { q: "y = \\ln(x^3), \\text{find } y''", a: "y'' = -3/x^2", cat: "2nd Deriv" },
-        { q: "y = x e^{2x}, \\text{find } y''", a: "y'' = 4x e^{2x} + 4e^{2x}", cat: "2nd Deriv" },
-        { q: "y = \\frac{1}{x}, \\text{find } y''", a: "y'' = 2/x^3", cat: "2nd Deriv" },
-        { q: "y = \\tan(x), \\text{find } y''", a: "y'' = 2\\sec^2(x) \\tan(x)", cat: "2nd Deriv" },
-        { q: "y = \\cos^2(x), \\text{find } y' \\text{ (first step)}", a: "y' = -2\\sin(x) \\cos(x)", cat: "Chain" },
-        { q: "y = \\sqrt{2x+1}, \\text{find } y''", a: "y'' = -4/(2x+1)^{3/2}", cat: "2nd Deriv" },
-        { q: "y = x^2 \\ln x, \\text{find } y''", a: "y'' = 2\\ln(x) + 3", cat: "2nd Deriv" },
-        { q: "y = e^{x^2}, \\text{find } y' \\text{ (first step)}", a: "y' = 2x e^{x^2}", cat: "Chain" }
+    // ADD YOUR QUESTIONS HERE - Give each a unique ID!
+    const pool = [
+    { id: 1, q: "y = x^2 \\cos(3x)", a: "y' = -3x^2 \\sin(3x) + 2x \\cos(3x)" },
+    { id: 2, q: "y = e^{2x} \\ln(x)", a: "y' = \\frac{e^{2x}}{x} + 2e^{2x} \\ln(x)" },
+    { id: 3, q: "y = \\sin(x) \\tan(2x)", a: "y' = 2\\sin(x) \\sec^2(2x) + \\cos(x) \\tan(2x)" },
+    { id: 4, q: "y = \\frac{e^{4x}}{x^3}", a: "y' = \\frac{4x^3 e^{4x} - 3x^2 e^{4x}}{x^6}" },
+    { id: 5, q: "y = \\cos(e^{x^2})", a: "y' = -2x e^{x^2} \\sin(e^{x^2})" },
+    { id: 6, q: "y = \\ln(\\sin 4x)", a: "y' = 4 \\cot(4x)" },
+    { id: 7, q: "y = \\sin(\\ln(\\cos x))", a: "y' = -\\tan(x) \\cos(\\ln(\\cos x))" },
+    { id: 8, q: "y = e^{\\sqrt{\\sin x}}", a: "y' = \\frac{\\cos x e^{\\sqrt{\\sin x}}}{2\\sqrt{\\sin x}}" },
+    { id: 9, q: "y = x e^{2x}, y''?", a: "y'' = 4x e^{2x} + 4e^{2x}" },
+    { id: 10, q: "y = \\tan(x^3)", a: "y' = 3x^2 \\sec^2(x^3)" },
+    { id: 11, q: "y = \\ln^2(3x)", a: "y' = \\frac{2\\ln(3x)}{x}" },
+    { id: 12, q: "y = \\sqrt{2x+1}, y''?", a: "y'' = -4(2x+1)^{-3/2}" },
+    { id: 13, q: "y = \\sec(5x)", a: "y' = 5 \\sec(5x) \\tan(5x)" },
+    { id: 14, q: "y = \\cot(x^2)", a: "y' = -2x \\csc^2(x^2)" },
+    { id: 15, q: "y = \\ln(x^2 + 5x)", a: "y' = \\frac{2x+5}{x^2+5x}" },
+    { id: 16, q: "y = (2x-3)^5", a: "y' = 10(2x-3)^4" },
+    { id: 17, q: "y = \\arcsin(3x)", a: "y' = \\frac{3}{\\sqrt{1-9x^2}}" },
+    { id: 18, q: "y = \\arctan(x^2)", a: "y' = \\frac{2x}{1+x^4}" },
+    { id: 19, q: "y = 5^{x}", a: "y' = 5^x \\ln 5" },
+    { id: 20, q: "y = \\log_{10}(x)", a: "y' = \\frac{1}{x \\ln 10}" },
+    { id: 21, q: "y = \\frac{1}{\\sin x}", a: "y' = -\\csc x \\cot x" },
+    { id: 22, q: "y = \\sqrt[3]{x^2+1}", a: "y' = \\frac{2x}{3(x^2+1)^{2/3}}" },
+    { id: 23, q: "y = e^{\\cos x}", a: "y' = -\\sin x e^{\\cos x}" },
+    { id: 24, q: "y = x^x, \\text{find } \\frac{dy}{dx}", a: "y' = x^x(1 + \\ln x)" },
+    { id: 25, q: "y = \\frac{\\ln x}{x^2}", a: "y' = \\frac{1-2\\ln x}{x^3}" },
+    { id: 26, q: "y = \\sin^3(2x)", a: "y' = 6 \\sin^2(2x) \\cos(2x)" },
+    { id: 27, q: "y = \\cos^4(x)", a: "y' = -4 \\cos^3(x) \\sin(x)" },
+    { id: 28, q: "y = \\ln(\\sec x + \\tan x)", a: "y' = \\sec x" },
+    { id: 29, q: "y = e^{x} \\sin x", a: "y' = e^x(\\sin x + \\cos x)" },
+    { id: 30, q: "y = \\frac{x}{\\ln x}", a: "y' = \\frac{\\ln x - 1}{(\\ln x)^2}" },
+    { id: 31, q: "y = (x^2+1)e^x", a: "y' = (x^2+2x+1)e^x" },
+    { id: 32, q: "y = \\sqrt{\\ln x}", a: "y' = \\frac{1}{2x \\sqrt{\\ln x}}" },
+    { id: 33, q: "y = \\sin(x^2) e^x", a: "y' = e^x(2x \\cos(x^2) + \\sin(x^2))" },
+    { id: 34, q: "y = \\frac{\\tan x}{x}", a: "y' = \\frac{x \\sec^2 x - \\tan x}{x^2}" },
+    { id: 35, q: "y = \\ln(\\ln x)", a: "y' = \\frac{1}{x \\ln x}" },
+    { id: 36, q: "y = e^{3x} \\cos(4x)", a: "y' = e^{3x}(3 \\cos 4x - 4 \\sin 4x)" },
+    { id: 37, q: "y = \\arccos(x/2)", a: "y' = -\\frac{1}{\\sqrt{4-x^2}}" },
+    { id: 38, q: "y = \\sqrt{1-x^2}", a: "y' = -\\frac{x}{\\sqrt{1-x^2}}" },
+    { id: 39, q: "y = \\frac{e^x+1}{e^x-1}", a: "y' = -\\frac{2e^x}{(e^x-1)^2}" },
+    { id: 40, q: "y = x^2 \\ln(x^2)", a: "y' = 2x(1 + 2\\ln x)" },
+    { id: 41, q: "y = \\tan(e^x)", a: "y' = e^x \\sec^2(e^x)" },
+    { id: 42, q: "y = \\ln(x^3+2x+1)", a: "y' = \\frac{3x^2+2}{x^3+2x+1}" },
+    { id: 43, q: "y = \\sin(x) \\cos(x)", a: "y' = \\cos(2x)" },
+    { id: 44, q: "y = e^{x^3}", a: "y' = 3x^2 e^{x^3}" },
+    { id: 45, q: "y = \\frac{1}{x^2+1}", a: "y' = -\\frac{2x}{(x^2+1)^2}" },
+    { id: 46, q: "y = (1+\\sin x)^2", a: "y' = 2(1+\\sin x)\\cos x" },
+    { id: 47, q: "y = \\ln(\\sqrt{x})", a: "y' = \\frac{1}{2x}" },
+    { id: 48, q: "y = \\sqrt{\\tan x}", a: "y' = \\frac{\\sec^2 x}{2\\sqrt{\\tan x}}" },
+    { id: 49, q: "y = \\csc(x^2)", a: "y' = -2x \\csc(x^2) \\cot(x^2)" },
+    { id: 50, q: "y = x \\arctan x", a: "y' = \\arctan x + \\frac{x}{1+x^2}" }
     ];
 
-    let startTime, timerInterval, solvedCount = 0;
-    let score = 0, streak = 0, currentElapsed = 0;
-    let remainingQuestions = [];
-    const cats = ["🐈", "😻", "😼", "😽", "😾", "🐆", "🐅", "🐈‍⬛", "🦁", "🙀", "🐾", "🧶"];
+    let sprintTime = 0, sprintInterval, startTime;
+    let solvedCount = 0, penaltyTime = 0, sprintQuestions = [];
+    let masteredIds = JSON.parse(localStorage.getItem("m2_mastered")) || [];
 
-    function updateUI() {
-        document.getElementById('scoreDisplay').innerText = `Score: ${score}`;
-        document.getElementById('streakDisplay').innerText = `Streak: ${streak}x`;
-        document.getElementById('streakDisplay').style.color = streak > 5 ? "orange" : "white";
-        document.getElementById('solved-count').textContent = "Solved: " + solvedCount;
+    window.onload = () => {
+        displayLeaderboard();
+        updateMasteryUI();
+    };
+
+    function updateMasteryUI() {
+        document.getElementById("masteryDisplay").textContent = `Mastery: ${masteredIds.length} / ${pool.length} Unique Questions`;
+        if (masteredIds.length === pool.length && pool.length > 0) {
+            document.getElementById("masteryDisplay").style.color = "var(--correct)";
+            document.getElementById("masteryDisplay").textContent += " - POOL EXHAUSTED!";
+        }
     }
 
-    function nextQuestion() {
-        if (remainingQuestions.length === 0) {
-            remainingQuestions = [...questions];
-            if (solvedCount > 0) alert("Set cleared! Restarting.");
-        }
+    function startSprint() {
+        solvedCount = 0;
+        penaltyTime = 0;
+        
+        // SHUFFLE LOGIC:
+        // We pick 10 random questions. 
+        sprintQuestions = [...pool].sort(() => Math.random() - 0.5).slice(0, 10);
+        
+        document.getElementById("startBtn").style.display = "none";
+        document.getElementById("revealBtn").style.display = "block";
+        document.getElementById("display").style.color = "var(--accent)";
+        
+        startTime = Date.now();
+        sprintInterval = setInterval(updateTimer, 10);
+        loadQuestion();
+    }
 
-        const idx = Math.floor(Math.random() * remainingQuestions.length);
-        const currentQ = remainingQuestions[idx];
-        remainingQuestions.splice(idx, 1);
+    function updateTimer() {
+        sprintTime = (Date.now() - startTime) / 1000 + penaltyTime;
+        document.getElementById("display").textContent = sprintTime.toFixed(2);
+    }
 
-        document.getElementById("questionText").innerHTML = "\\[ " + currentQ.q + " \\]";
-        document.getElementById("answerText").innerHTML = "\\[ " + currentQ.a + " \\]";
-        document.getElementById("category").textContent = currentQ.cat + " (Left: " + remainingQuestions.length + ")";
-        document.getElementById("catEmoji").textContent = cats[solvedCount % cats.length];
+    function loadQuestion() {
+        const q = sprintQuestions[solvedCount];
+        const isNew = !masteredIds.includes(q.id);
+        
+        document.getElementById("progressDisplay").textContent = `Q${solvedCount + 1} / 10`;
+        document.getElementById("questionText").innerHTML = (isNew ? "<span style='color:var(--accent); font-size:0.7rem;'>NEW!</span><br>" : "") + "\\[ " + q.q + " \\]";
+        document.getElementById("answerText").innerHTML = "\\[ " + q.a + " \\]";
         
         document.getElementById("answerText").style.display = "none";
         document.getElementById("scoreButtons").style.display = "none";
-        document.getElementById("revealBtn").disabled = false;
-        document.getElementById("display").style.color = "var(--accent)";
+        document.getElementById("revealBtn").style.display = "block";
 
         if (window.MathJax) MathJax.typesetPromise();
-
-        clearInterval(timerInterval);
-        startTime = Date.now();
-        timerInterval = setInterval(() => {
-            currentElapsed = (Date.now() - startTime) / 1000;
-            document.getElementById("display").textContent = currentElapsed.toFixed(2);
-        }, 10);
     }
 
     function toggleAnswer() {
-        clearInterval(timerInterval);
         document.getElementById("answerText").style.display = "block";
         document.getElementById("scoreButtons").style.display = "flex";
-        document.getElementById("revealBtn").disabled = true;
+        document.getElementById("revealBtn").style.display = "none";
         if (window.MathJax) MathJax.typesetPromise();
     }
 
-    function markCorrect() {
-        streak++;
-        let bonus = currentElapsed < 5 ? 2 : 1;
-        score += 10 * streak * bonus;
+    function handleResult(isCorrect) {
+        const currentQ = sprintQuestions[solvedCount];
+        
+        if (isCorrect) {
+            // Track mastery if correct
+            if (!masteredIds.includes(currentQ.id)) {
+                masteredIds.push(currentQ.id);
+                localStorage.setItem("m2_mastered", JSON.stringify(masteredIds));
+                updateMasteryUI();
+            }
+        } else {
+            penaltyTime += 5;
+            flashTimer();
+        }
+        
         solvedCount++;
-        updateUI();
-        nextQuestion();
+        if (solvedCount < 10) {
+            loadQuestion();
+        } else {
+            finishSprint();
+        }
     }
 
-    function markIncorrect() {
-        streak = 0;
-        updateUI();
-        nextQuestion();
+    function flashTimer() {
+        const t = document.getElementById("display");
+        t.style.color = "var(--wrong)";
+        setTimeout(() => t.style.color = "var(--accent)", 400);
+    }
+
+    function finishSprint() {
+        clearInterval(sprintInterval);
+        const finalTime = sprintTime.toFixed(2);
+        
+        setTimeout(() => {
+            const name = prompt(`Sprint Finished!\nTime: ${finalTime}s\nMastery: ${masteredIds.length}/${pool.length}\nEnter Name:`) || "Player";
+            saveScore(name, finalTime);
+            document.getElementById("startBtn").style.display = "block";
+            document.getElementById("startBtn").textContent = "NEW SPRINT";
+            document.getElementById("revealBtn").style.display = "none";
+            document.getElementById("scoreButtons").style.display = "none";
+        }, 100);
+    }
+
+    function saveScore(name, time) {
+        let lb = JSON.parse(localStorage.getItem("m2_speedrun_v3")) || [];
+        lb.push({ name: name, time: parseFloat(time) });
+        lb.sort((a, b) => a.time - b.time);
+        localStorage.setItem("m2_speedrun_v3", JSON.stringify(lb.slice(0, 5)));
+        displayLeaderboard();
+    }
+
+    function displayLeaderboard() {
+        const lb = JSON.parse(localStorage.getItem("m2_speedrun_v3")) || [];
+        const container = document.getElementById("leaderboardList");
+        container.innerHTML = lb.length ? "" : "<div style='text-align:center; opacity:0.5; font-size:0.8rem;'>No runs yet</div>";
+        lb.forEach((e, i) => {
+            container.innerHTML += `<div class="lb-item"><span>${i+1}. ${e.name}</span><strong>${e.time.toFixed(2)}s</strong></div>`;
+        });
     }
 </script>
 </body>
